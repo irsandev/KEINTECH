@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>Catatan Produksi</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;-webkit-text-size-adjust:100%}
+  
+  /* Bar atas */
+  .bar{display:flex;gap:8px 12px;align-items:center;padding:8px 12px;background:#f1f5f9;border-bottom:1px solid #cbd5e1;flex-wrap:wrap;position:sticky;top:0;left:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  .bar-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .uname-wrap{display:inline-flex;align-items:center;gap:4px}
+  .bar button,.bar input{font:inherit;padding:5px 10px;border:1px solid #94a3b8;border-radius:5px;background:#fff;height:32px;display:inline-flex;align-items:center;justify-content:center}
+  .bar button{cursor:pointer;font-weight:500;transition:all .15s}
+  .bar button:hover{background:#f1f5f9;border-color:#64748b}
+  .bar .primary{background:#1a73e8;color:#fff;border-color:#1558b0;font-weight:bold}
+  .bar .primary:hover{background:#1558b0}
+  .bar .st{margin-left:auto;color:#475569;font-size:12px;background:#e2e8f0;padding:4px 9px;border-radius:12px;white-space:nowrap}
+  .bar .st.err{color:#dc2626;background:#fee2e2;font-weight:bold}
+  
+  /* Tab Produk */
+  .tabs{display:flex;gap:4px;padding:6px 10px 0;background:#e2e8f0;border-bottom:2px solid #1a73e8;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabs button{font:inherit;font-weight:bold;padding:8px 16px;border:1px solid #cbd5e1;border-bottom:0;background:#f8fafc;cursor:pointer;border-radius:6px 6px 0 0;white-space:nowrap;min-height:36px;color:#334155;transition:background .15s}
+  .tabs button:hover{background:#ffffff}
+  .tabs button.on{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  
+  /* Wadah Halaman */
+  .wrap{padding:10px 12px 40px;width:100%;max-width:100%;box-sizing:border-box}
+  h1{font-size:clamp(16px,3.5vw,20px);text-align:center;margin:14px 0 4px;font-weight:bold;color:#1e293b}
+  h2{font-size:clamp(13px,3vw,16px);text-align:center;margin:4px 0 16px;color:#475569}
+  
+  /* Switcher tampilan HP */
+  .view-switch{display:none;gap:4px;justify-content:center;margin-bottom:16px;padding:0;width:100%;max-width:440px;margin-left:auto;margin-right:auto}
+  .view-switch button{flex:1;min-width:0;text-align:center;font:inherit;font-size:12px;font-weight:600;padding:7px 4px;border:1px solid #cbd5e1;background:#fff;border-radius:20px;cursor:pointer;color:#334155;box-shadow:0 1px 2px rgba(0,0,0,0.05);transition:all .15s;white-space:nowrap}
+  .view-switch button.on{background:#1a73e8;color:#fff;border-color:#1a73e8;box-shadow:0 2px 4px rgba(26,115,232,0.3)}
+  
+  /* Layout Desktop */
+  @media (min-width: 993px) {
+    .main{display:flex;gap:24px;align-items:flex-start;justify-content:center}
+    #prod{flex:0 0 auto}
+    #deliv{flex:0 0 auto}
+    #side{flex:0 0 330px;width:330px}
+    .view-switch{display:none !important}
+    #prod,#deliv,#side{display:block !important}
+  }
+  
+  /* Layout Mobile & Tablet */
+  @media (max-width: 992px) {
+    .main{display:flex;flex-direction:column;gap:20px;align-items:center;width:100%}
+    .view-switch{display:flex}
+    #side{order:1;width:100%;max-width:480px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border:1px solid #e2e8f0}
+    #prod{order:2;width:100%;max-width:100%}
+    #deliv{order:3;width:100%;display:flex;justify-content:center}
+    td,th{height:32px}
+    td input{font-size:14px;height:32px}
+    .bar{padding:6px 8px;gap:6px}
+    .bar-group{gap:4px}
+    .bar button,.bar input{height:34px;font-size:13px;padding:4px 8px}
+    #uname{width:90px}
+    #stk td input{font-size:16px;height:38px}
+  }
+  
+  /* Tabel & Scroll Horizontal */
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;background:#fff;border:1px solid #94a3b8;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  table{border-collapse:collapse}
+  td,th{border:1px solid #000;height:22px;padding:0;text-align:center;font-weight:normal}
+  th{font-weight:bold}
+  .blue{background:#00b0f0}.yellow{background:#ff0}.black{background:#000;color:#fff}.grey{background:#bfbfbf}
+  .red{background:#f00;color:#000}.green{background:#92d050}.lgrey{background:#d9d9d9}
+  .gap{border:none;background:#fff;width:16px}
+  .tgl{width:54px;text-align:right;padding-right:3px}
+  .num{width:60px}.rem{width:140px}
+  
+  /* Sticky Kolom TGL saat scroll samping */
+  #tprod th.tgl,#tprod td.tgl,#tdel th.tgl,#tdel td.tgl{position:sticky;left:0;z-index:2}
+  #tprod td.tgl,#tdel td.tgl{background:#f1f5f9;border-right:2px solid #000;font-weight:600}
+  #tprod tr.sun td.tgl,#tdel tr.sun td.tgl{background:#f87171}
+  
+  /* Input dalam sel */
+  td input{width:100%;height:100%;border:0;background:transparent;text-align:right;font:inherit;padding:0 3px;margin:0;outline:none}
+  td input.txt{text-align:left}
+  td input:focus{background:#fffbd0;box-shadow:inset 0 0 0 2px #1a73e8}
+  tr.sun td{background:#f87171}
+  tr.sun td.gap{background:#fff}
+  tr.sun input:focus{background:#ffd0d0}
+  td input.ph::placeholder{color:#64748b;font-style:italic}
+  td input.flash{animation:fl 1.6s}
+  @keyframes fl{0%{background:#7fe08a}100%{background:transparent}}
+  .tot td{font-weight:bold;text-align:right;padding-right:3px}
+  .tot td.l{text-align:left;padding-left:3px}
+  
+  /* Bagian Stok Samping */
+  .side .ttl{font-size:16px;font-weight:bold;text-align:center;margin:6px 0 12px;color:#0f172a}
+  .side table{margin-bottom:18px;width:100%}
+  .side td,.side th{padding:2px 4px}
+  .side td.r{text-align:right}
+  .neg{color:#dc2626;font-weight:bold}
+  .ket{font-size:12px;margin:-12px 0 18px 4px;line-height:1.4;color:#475569}
+  .mini{font-size:12px;color:#444}
+  
+  /* Dialog */
+  dialog{width:min(780px,94vw);max-height:85vh;border:1px solid #94a3b8;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.25);padding:0}
+  dialog .h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f1f5f9;border-bottom:1px solid #cbd5e1;font-weight:bold}
+  dialog .h button{padding:4px 10px;font:inherit;border:1px solid #cbd5e1;border-radius:4px;background:#fff;cursor:pointer}
+  dialog .b{overflow:auto;max-height:70vh;padding:12px 14px}
+  dialog table{width:100%;margin-top:8px}
+  dialog td{padding:4px 6px;text-align:left;font-size:12px}
+  
+  #stk{width:min(560px,94vw)}
+  #stk .b{padding:14px 16px 18px}
+  #stk label.opt{display:block;margin:6px 0;line-height:1.4}
+  #stk table{width:100%;margin:12px 0}
+  #stk th,#stk td{padding:5px 6px;height:auto}
+  #stk td input{border:1px solid #94a3b8;border-radius:4px;text-align:right;padding:6px 8px;font-size:15px;width:100%}
+  #stk td.cur{text-align:right;color:#64748b}
+  #stk .note{font-size:12px;color:#475569;margin:8px 0}
+  #stk .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  #stk .acts button{font:inherit;padding:7px 16px;border-radius:4px;cursor:pointer}
+  
+  @media print{.bar,.tabs,.view-switch{display:none !important}.wrap{min-width:0;padding:0}td input{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-group">
+    <button id="prev" title="Bulan sebelumnya">◀</button>
+    <input type="month" id="mpick">
+    <button id="next" title="Bulan berikutnya">▶</button>
+    <button id="today">Bulan ini</button>
+  </div>
+  <div class="bar-group">
+    <button id="stkbtn" class="primary">Input stok terakhir</button>
+    <span class="uname-wrap"><span>Nama:</span><input id="uname" size="10" placeholder="nama kamu"></span>
+  </div>
+  <div class="bar-group">
+    <button id="log">Riwayat</button>
+    <button id="csv">Export CSV</button>
+    <button id="bak" title="Unduh semua data (semua produk) sebagai file cadangan">Backup</button>
+    <button onclick="print()">Cetak</button>
+  </div>
+  <span class="st" id="st">memuat…</span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="wrap">
+  <h1 id="h1">CATATAN PRODUKSI, DELIVERY, DAN FINISH GOOD</h1>
+  <h2 id="sub"></h2>
+  <div class="view-switch" id="viewSwitch">
+    <button class="vbtn on" data-view="all">Semua</button>
+    <button class="vbtn" data-view="side">📊 Stok</button>
+    <button class="vbtn" data-view="prod">⚙️ Produksi</button>
+    <button class="vbtn" data-view="deliv">🚚 Delivery</button>
+  </div>
+  <div class="main">
+    <div id="prod"></div>
+    <div id="deliv"></div>
+    <div class="side" id="side"></div>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="h"><span id="dlgT">Riwayat perubahan</span><button onclick="dlg.close()">Tutup</button></div><div class="b" id="dlgB"></div></dialog>
+
+<dialog id="stk">
+  <div class="h"><span id="stkT">Input stok terakhir</span><button onclick="stk.close()">Tutup</button></div>
+  <div class="b">
+    <label class="opt"><input type="radio" name="smode" value="aktual" checked> <b>Stok nyata sekarang</b> (hasil hitung di lapangan). Stok awal bulan disesuaikan otomatis, data harian yang sudah terinput tidak diubah.</label>
+    <label class="opt"><input type="radio" name="smode" value="awal"> <b>Stok awal bulan</b> (posisi sebelum tanggal 1)</label>
+    <div class="note">Satuan: <select id="sunit"><option value="pcs">pcs</option><option value="krj">keranjang</option></select> &nbsp; Kosongkan kolom yang tidak mau diubah. LH otomatis ikut RH kalau kosong.</div>
+    <table>
+      <tr><th></th><th class="blue">RH</th><th class="yellow">LH</th><th>Sekarang di sistem (pcs)</th></tr>
+      <tr><td><b>Stock finish good</b></td><td><input id="s-fg-rh" inputmode="decimal"></td><td><input id="s-fg-lh" inputmode="decimal"></td><td class="cur" id="c-fg"></td></tr>
+      <tr><td><b>Rawpart</b></td><td><input id="s-rp-rh" inputmode="decimal"></td><td><input id="s-rp-lh" inputmode="decimal"></td><td class="cur" id="c-rp"></td></tr>
+    </table>
+    <div class="note" id="sinfo"></div>
+    <div class="acts"><button onclick="stk.close()">Batal</button><button id="ssave" class="primary" style="padding:6px 16px">Simpan stok</button></div>
+  </div>
+</dialog>
+
+<script>
+const BLN = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGT','SEPT','OKT','NOV','DES'];
+const $ = s => document.querySelector(s);
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const fmt = n => (Math.round(n * 10) / 10).toString();
+const pad = n => String(n).padStart(2, '0');
+
+const EMPTY_CL = () => ({ fg: { rh: 0, lh: 0 }, rp: { rh: 0, lh: 0 } });
+let ym, prod = '', PRODUCTS = [], S = { cells: {}, version: -1, perBox: 30, prevClosing: EMPTY_CL() };
+let sortirRows = 5;
+const dlg = $('#dlg'), stk = $('#stk');
+const curProd = () => PRODUCTS.find(p => p.id === prod) || { id: prod, menu: prod, name: '' };
+
+const nowYm = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+const daysIn = ym => new Date(+ym.slice(0, 4), +ym.slice(5), 0).getDate();
+const prevYm = ym => { let y = +ym.slice(0, 4), m = +ym.slice(5) - 1; if (m < 1) { m = 12; y--; } return y + '-' + pad(m); };
+const isSunday = (ym, d) => new Date(+ym.slice(0, 4), +ym.slice(5) - 1, d).getDay() === 0;
+
+$('#uname').value = localStorage.getItem('k3va_user') || '';
+$('#uname').addEventListener('change', e => localStorage.setItem('k3va_user', e.target.value.trim()));
+
+function setStatus(t, err) { const s = $('#st'); s.textContent = t; s.className = 'st' + (err ? ' err' : ''); }
+
+/* ---------- API ---------- */
+async function api(path, opt) {
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+async function load(force) {
+  const want = ym;
+  try {
+    const wp = prod;
+    const j = await api(`/api/month/${prod}/${ym}` + (force ? '' : `?since=${S.version}`));
+    if (want !== ym || wp !== prod) return;
+    if (!j.unchanged) { applyState(j); }
+    setStatus('tersambung · ' + new Date().toLocaleTimeString('id-ID'));
+  } catch (e) { setStatus('koneksi putus — ' + e.message, true); }
+}
+function applyState(j) {
+  const old = S.cells;
+  S = Object.assign(S, j);
+  refresh(old);
+}
+async function setCell(key, value) {
+  const user = $('#uname').value.trim() || 'anonim';
+  setStatus('menyimpan…');
+  try {
+    const j = await api('/api/cell', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prod, ym, key, value, user }) });
+    if (j.value === '') delete S.cells[key]; else S.cells[key] = j.value;
+    S.version = j.version;
+    setStatus('tersimpan ✓ ' + new Date().toLocaleTimeString('id-ID'));
+    return true;
+  } catch (e) { setStatus('GAGAL simpan: ' + e.message, true); return false; }
+}
+
+/* ---------- Build tabel ---------- */
+function inp(key, txt, ph) {
+  return `<input data-key="${key}" class="${txt ? 'txt' : ''}" ${txt ? '' : 'inputmode="decimal"'} autocomplete="off"${ph ? ' placeholder=""' : ''}>`;
+}
+function build() {
+  const dim = daysIn(ym);
+  const mn = BLN[+ym.slice(5) - 1], yr = ym.slice(0, 4);
+  const pname = curProd().name;
+  $('#h1').textContent = `CATATAN PRODUKSI, DELIVERY, DAN FINISH GOOD ${pname}`;
+  $('#sub').textContent = `BULAN ${mn} ${yr}`;
+  document.title = `${curProd().menu} ${mn} ${yr} - Produksi`;
+  const pm = BLN[+prevYm(ym).slice(5) - 1];
+
+  // PRODUKSI
+  let h = `<div class="table-scroll"><table id="tprod"><tr><th colspan="9" class="blue">PRODUKSI</th></tr>
+  <tr><th rowspan="2" class="blue tgl" style="text-align:center">TGL</th><th colspan="2" class="black">INJECTION</th><td class="gap"></td>
+  <th colspan="2" class="grey">VACUUM</th><td class="gap"></td><th colspan="2" class="red">NG VACUUM</th><th rowspan="2" class="blue rem" style="text-align:center">REMARK</th></tr>
+  <tr><th class="blue num">RH</th><th class="yellow num">LH</th><td class="gap"></td><th class="blue num">RH</th><th class="yellow num">LH</th><td class="gap"></td><th class="blue num">RH</th><th class="yellow num">LH</th></tr>
+  <tr><td></td><td></td><td></td><td class="gap"></td><td>${inp('awal-rh')}</td><td>${inp('awal-lh')}</td><td class="gap"></td><td></td><td></td><td class="yellow" style="text-align:left;padding-left:2px">STOCK ${pm}</td></tr>`;
+  for (let d = 1; d <= dim; d++) {
+    h += `<tr class="${isSunday(ym, d) ? 'sun' : ''}"><td class="tgl">${d}</td>
+    <td>${inp(`inj-${d}-rh`)}</td><td>${inp(`inj-${d}-lh`)}</td><td class="gap"></td>
+    <td>${inp(`vac-${d}-rh`)}</td><td>${inp(`vac-${d}-lh`)}</td><td class="gap"></td>
+    <td>${inp(`ng-${d}-rh`)}</td><td>${inp(`ng-${d}-lh`)}</td><td>${inp(`rem-${d}`, true)}</td></tr>`;
+  }
+  h += `<tr class="tot"><td class="l">TOTAL</td><td id="t-inj-rh"></td><td id="t-inj-lh"></td><td class="gap"></td><td id="t-vac-rh"></td><td id="t-vac-lh"></td><td class="gap"></td><td id="t-ng-rh"></td><td id="t-ng-lh"></td><td></td></tr></table></div>`;
+  $('#prod').innerHTML = h;
+
+  // DELIVERY
+  let dv = `<div class="table-scroll"><table id="tdel"><tr><th colspan="3" style="background:#fff">DELIVERY</th></tr>
+  <tr><th rowspan="2" class="tgl" style="background:#fff;text-align:center">TGL</th><th colspan="2" style="background:#fff">QTY PCS</th></tr>
+  <tr><th class="blue num">RH</th><th class="yellow num">LH</th></tr><tr><td></td><td></td><td></td></tr>`;
+  for (let d = 1; d <= dim; d++) {
+    dv += `<tr class="${isSunday(ym, d) ? 'sun' : ''}"><td class="tgl">${d}</td><td>${inp(`del-${d}-rh`)}</td><td>${inp(`del-${d}-lh`)}</td></tr>`;
+  }
+  dv += `<tr class="tot"><td class="l">TOTAL</td><td id="t-del-rh"></td><td id="t-del-lh"></td></tr></table></div>`;
+  $('#deliv').innerHTML = dv;
+  buildSide();
+  bindInputs();
+  applyView();
+}
+function buildSide() {
+  const mn = BLN[+ym.slice(5) - 1], yr = ym.slice(0, 4);
+  let s = `<div class="ttl">STOCK ${curProd().name} ${mn} ${yr}</div>
+  <table><tr><th colspan="5" class="green">STOCK FINISH GOOD</th></tr>
+  <tr><th rowspan="2" class="green" style="width:50px;text-align:center">TGL</th><th colspan="2" class="green">QTY PCS</th><th colspan="2" class="green">QTY KERANJANG</th></tr>
+  <tr><th class="blue">RH</th><th class="yellow">LH</th><th class="blue">RH</th><th class="yellow">LH</th></tr>
+  <tr><td class="r" id="fg-tgl"></td><td class="r" id="fg-rh"></td><td class="r" id="fg-lh"></td><td class="r" id="fgk-rh"></td><td class="r" id="fgk-lh"></td></tr></table>
+  <div class="ket">KET : Stok awal + total vacuum − total delivery.<br>Dihitung dari semua data yang sudah diinput.<br>1 keranjang = <input id="perbox" size="3" style="text-align:right"> pcs</div>
+
+  <table><tr><th colspan="5" class="lgrey" style="background:#fff">RAWPART</th></tr>
+  <tr><th rowspan="2" style="width:50px;text-align:center;background:#fff">TGL</th><th colspan="2" style="background:#fff">QTY PCS</th><th colspan="2" style="background:#fff">QTY KERANJANG</th></tr>
+  <tr><th class="blue">RH</th><th class="yellow">LH</th><th class="blue">RH</th><th class="yellow">LH</th></tr>
+  <tr><td class="r" id="rp-tgl"></td><td class="r" id="rp-rh"></td><td class="r" id="rp-lh"></td><td class="r" id="rpk-rh"></td><td class="r" id="rpk-lh"></td></tr>
+  <tr><td class="yellow" style="font-size:11px">AWAL</td><td>${inp('rp-awal-rh')}</td><td>${inp('rp-awal-lh')}</td><td></td><td></td></tr></table>
+  <div class="ket">Rawpart = rawpart awal + total injection − total vacuum − NG.<br>Baris AWAL otomatis dari bulan lalu, bisa ditimpa.</div>
+
+  <table id="tsor"><tr><th colspan="4" class="lgrey">SORTIR FINNISH GOOD</th></tr>
+  <tr><th rowspan="2" class="lgrey" style="width:62px;text-align:center">TGL</th><th colspan="2" class="lgrey">QTY PCS</th><th rowspan="2" class="lgrey">REMARK</th></tr>
+  <tr><th class="blue">RH</th><th class="yellow">LH</th></tr>`;
+  for (let i = 0; i < sortirRows; i++) {
+    s += `<tr><td>${inp(`sor-${i}-tgl`, true)}</td><td>${inp(`sor-${i}-rh`)}</td><td>${inp(`sor-${i}-lh`)}</td><td>${inp(`sor-${i}-rem`, true)}</td></tr>`;
+  }
+  s += `<tr class="tot"><td class="l">TOTAL</td><td id="t-sor-rh"></td><td id="t-sor-lh"></td><td></td></tr></table>
+  <button id="addrow" style="margin-top:6px">+ baris sortir</button>`;
+  $('#side').innerHTML = s;
+  $('#addrow').onclick = () => { sortirRows++; buildSide(); bindInputs(); refresh(null); };
+  const pb = $('#perbox');
+  pb.value = S.perBox;
+  pb.onchange = async () => {
+    try { await api('/api/perbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prod, value: pb.value }) }); S.perBox = num(pb.value); refresh(null); }
+    catch (e) { pb.value = S.perBox; setStatus('gagal: ' + e.message, true); }
+  };
+}
+
+function bindInputs() {
+  document.querySelectorAll('input[data-key]').forEach(el => {
+    el.addEventListener('focus', () => el.select());
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); move(el, 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); move(el, -1); }
+      else if (e.key === 'Escape') { el.value = S.cells[el.dataset.key] ?? ''; el.blur(); }
+    });
+    el.addEventListener('change', () => commit(el));
+  });
+}
+// pindah ke sel di baris atas/bawah pada kolom yang sama
+function move(el, dir) {
+  const td = el.closest('td'), tr = td.parentElement, idx = [...tr.children].indexOf(td);
+  let row = dir > 0 ? tr.nextElementSibling : tr.previousElementSibling;
+  while (row) {
+    const t = row.children[idx], i = t && t.querySelector('input');
+    if (i) { i.focus(); return; }
+    row = dir > 0 ? row.nextElementSibling : row.previousElementSibling;
+  }
+  el.blur();
+}
+async function commit(el) {
+  const key = el.dataset.key;
+  const txt = el.classList.contains('txt');
+  let v = el.value.trim();
+  if (!txt && v !== '') {
+    const n = Number(v.replace(',', '.'));
+    if (!isFinite(n)) { el.value = S.cells[key] ?? ''; setStatus('harus angka', true); return; }
+    v = n;
+  }
+  const old = S.cells[key];
+  const ok = await setCell(key, v);
+  if (!ok) { el.value = old ?? ''; return; }
+  // RH diisi -> LH ikut terisi bila masih kosong / sama dengan RH lama (reflector selalu sepasang)
+  if (/-rh$/.test(key)) {
+    const lk = key.replace(/rh$/, 'lh');
+    if (S.cells[lk] === undefined || S.cells[lk] === old) { if (await setCell(lk, v)) { /* ok */ } }
+  }
+  refresh(null);
+}
+
+/* ---------- Hitung & tampilkan ---------- */
+function refresh(oldCells) {
+  const c = S.cells, dim = daysIn(ym);
+  document.querySelectorAll('input[data-key]').forEach(el => {
+    if (document.activeElement === el) return;
+    const k = el.dataset.key, nv = c[k] === undefined ? '' : String(c[k]);
+    if (el.value !== nv) {
+      el.value = nv;
+      if (oldCells && String(oldCells[k] ?? '') !== nv) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+    }
+  });
+  const sum = (p, s) => { let t = 0; for (let d = 1; d <= dim; d++) t += num(c[`${p}-${d}-${s}`]); return t; };
+  const set = (id, v, neg) => { const e = document.getElementById(id); if (e) { e.textContent = fmt(v); e.classList.toggle('neg', !!neg && v < 0); } };
+  const T = {};
+  for (const s of ['rh', 'lh']) {
+    const awal = c['awal-' + s] !== undefined ? num(c['awal-' + s]) : S.prevClosing.fg[s];
+    const rawal = c['rp-awal-' + s] !== undefined ? num(c['rp-awal-' + s]) : S.prevClosing.rp[s];
+    const ai = document.querySelector(`input[data-key="awal-${s}"]`);
+    if (ai) { ai.placeholder = c['awal-' + s] === undefined ? fmt(awal) : ''; ai.classList.add('ph'); }
+    const ri = document.querySelector(`input[data-key="rp-awal-${s}"]`);
+    if (ri) { ri.placeholder = c['rp-awal-' + s] === undefined ? fmt(rawal) : ''; ri.classList.add('ph'); }
+    T[s] = { inj: sum('inj', s), vac: sum('vac', s), ng: sum('ng', s), del: sum('del', s), awal, rawal };
+    set('t-inj-' + s, T[s].inj);
+    set('t-vac-' + s, T[s].vac + awal);          // total vacuum termasuk stok awal (seperti di Excel)
+    set('t-ng-' + s, T[s].ng);
+    set('t-del-' + s, T[s].del);
+    const fg = awal + T[s].vac - T[s].del;       // stok finish good
+    const rp = T[s].rawal + T[s].inj - T[s].vac - T[s].ng;    // rawpart (termasuk rawpart awal)
+    T[s].fg = fg; T[s].rp = rp;
+    set('fg-' + s, fg, true); set('fgk-' + s, fg / S.perBox, true);
+    set('rp-' + s, rp, true); set('rpk-' + s, rp / S.perBox, true);
+    let so = 0; for (let i = 0; i < 200; i++) so += num(c[`sor-${i}-${s}`]);
+    set('t-sor-' + s, so);
+  }
+  // tanggal acuan: hari ini (bulan berjalan) atau tanggal terakhir bulan itu
+  const cur = ym === nowYm(), td = cur ? new Date().getDate() : dim;
+  const lastWith = p => { for (let d = dim; d >= 1; d--) if (c[`${p}-${d}-rh`] !== undefined || c[`${p}-${d}-lh`] !== undefined) return d; return 0; };
+  const fgD = cur ? td : Math.max(lastWith('vac'), lastWith('del')) || dim;
+  const rpD = cur ? td : Math.max(lastWith('inj'), lastWith('vac'), lastWith('ng')) || dim;
+  $('#fg-tgl').textContent = fgD; $('#rp-tgl').textContent = rpD;
+  S.T = T;   // dipakai dialog "Input stok terakhir"
+}
+
+/* ---------- Riwayat ---------- */
+const NAMA = { inj: 'Injection', vac: 'Vacuum', ng: 'NG Vacuum', del: 'Delivery' };
+function desc(k) {
+  let m;
+  if ((m = k.match(/^(inj|vac|ng|del)-(\d+)-(rh|lh)$/))) return `${NAMA[m[1]]} ${m[3].toUpperCase()} tgl ${m[2]}`;
+  if ((m = k.match(/^rem-(\d+)$/))) return `Remark tgl ${m[1]}`;
+  if ((m = k.match(/^awal-(rh|lh)$/))) return `Stok awal finish good ${m[1].toUpperCase()}`;
+  if ((m = k.match(/^rp-awal-(rh|lh)$/))) return `Rawpart awal ${m[1].toUpperCase()}`;
+  if ((m = k.match(/^sor-(\d+)-(\w+)$/))) return `Sortir baris ${+m[1] + 1} ${m[2].toUpperCase()}`;
+  return k;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('#log').onclick = async () => {
+  try {
+    const rows = await api(`/api/log/${prod}/${ym}`);
+    $('#dlgB').innerHTML = rows.length ? `<table><tr><th>Waktu</th><th>Siapa</th><th>Kolom</th><th>Sebelum → Sesudah</th></tr>` +
+      rows.map(r => `<tr><td>${new Date(r.t).toLocaleString('id-ID')}</td><td>${esc(r.user)}</td><td>${esc(desc(r.key))}</td><td>${esc(r.old === '' ? '(kosong)' : r.old)} → ${esc(r.val === '' ? '(kosong)' : r.val)}</td></tr>`).join('') + '</table>'
+      : '<p>Belum ada perubahan bulan ini.</p>';
+    dlg.showModal();
+  } catch (e) { setStatus('gagal: ' + e.message, true); }
+};
+$('#csv').onclick = () => { location.href = `/api/export/${prod}/${ym}.csv`; };
+
+$('#bak').onclick = () => { location.href = '/api/backup'; };
+
+/* ---------- Input stok terakhir ---------- */
+const sval = id => $('#' + id).value.trim();
+function stockOpen() {
+  const T = S.T; if (!T) return;
+  $('#stkT').textContent = `Input stok terakhir — ${curProd().menu}`;
+  ['fg-rh', 'fg-lh', 'rp-rh', 'rp-lh'].forEach(k => $('#s-' + k).value = '');
+  $('#c-fg').textContent = `RH ${fmt(T.rh.fg)} · LH ${fmt(T.lh.fg)}`;
+  $('#c-rp').textContent = `RH ${fmt(T.rh.rp)} · LH ${fmt(T.lh.rp)}`;
+  $('#sinfo').textContent = `Bulan yang diubah: ${BLN[+ym.slice(5) - 1]} ${ym.slice(0, 4)} · 1 keranjang = ${S.perBox} pcs`;
+  stk.showModal();
+  $('#s-fg-rh').focus();
+}
+$('#stkbtn').onclick = stockOpen;
+['fg', 'rp'].forEach(g => $('#s-' + g + '-rh').addEventListener('input', e => {
+  const lh = $('#s-' + g + '-lh');
+  if (lh.dataset.manual !== '1') lh.value = e.target.value;   // LH ikut RH sampai LH diisi sendiri
+}));
+['fg', 'rp'].forEach(g => $('#s-' + g + '-lh').addEventListener('input', e => { e.target.dataset.manual = '1'; }));
+$('#ssave').onclick = async () => {
+  const mul = $('#sunit').value === 'krj' ? S.perBox : 1;
+  const conv = id => { const v = sval(id); if (v === '') return ''; const n = Number(v.replace(',', '.')); return isFinite(n) ? Math.round(n * mul * 100) / 100 : v; };
+  const body = {
+    prod, ym, mode: document.querySelector('input[name="smode"]:checked').value,
+    user: $('#uname').value.trim() || 'anonim',
+    fg: { rh: conv('s-fg-rh'), lh: conv('s-fg-lh') }, rp: { rh: conv('s-rp-rh'), lh: conv('s-rp-lh') },
+  };
+  setStatus('menyimpan stok…');
+  try {
+    const j = await api('/api/stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    applyState(j);
+    stk.close();
+    setStatus('stok tersimpan ✓ ' + new Date().toLocaleTimeString('id-ID'));
+  } catch (e) { setStatus('GAGAL simpan stok: ' + e.message, true); alert('Gagal: ' + e.message); }
+};
+stk.addEventListener('close', () => ['fg', 'rp'].forEach(g => delete $('#s-' + g + '-lh').dataset.manual));
+
+/* ---------- Navigasi bulan ---------- */
+function go(newYm) {
+  ym = newYm; $('#mpick').value = ym; sortirRows = 5;
+  S.version = -1; S.cells = {};
+  build(); refresh(null); load(true).then(() => {
+    // perluas baris sortir bila data lebih banyak dari 5
+    let mx = -1; Object.keys(S.cells).forEach(k => { const m = k.match(/^sor-(\d+)-/); if (m) mx = Math.max(mx, +m[1]); });
+    if (mx + 2 > sortirRows) { sortirRows = mx + 2; buildSide(); bindInputs(); refresh(null); }
+  });
+}
+const shift = n => { let y = +ym.slice(0, 4), m = +ym.slice(5) + n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + '-' + pad(m); };
+$('#prev').onclick = () => go(shift(-1));
+$('#next').onclick = () => go(shift(1));
+$('#today').onclick = () => go(nowYm());
+$('#mpick').onchange = e => { if (/^\d{4}-\d{2}$/.test(e.target.value)) go(e.target.value); };
+
+/* ---------- Menu produk ---------- */
+function renderTabs() {
+  $('#tabs').innerHTML = PRODUCTS.map(p => `<button data-p="${p.id}" class="${p.id === prod ? 'on' : ''}">${p.menu}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => switchProd(b.dataset.p));
+}
+function switchProd(id) {
+  if (id === prod) return;
+  prod = id;
+  try { localStorage.setItem('k3va_prod', id); } catch (e) {}
+  history.replaceState(null, '', '#' + id);
+  S.prevClosing = EMPTY_CL();
+  renderTabs(); go(ym);
+}
+/* ---------- Tampilan Mobile Switcher ---------- */
+let curView = 'all';
+function initViewSwitch() {
+  const btns = document.querySelectorAll('#viewSwitch .vbtn');
+  btns.forEach(btn => {
+    btn.onclick = () => {
+      btns.forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      curView = btn.dataset.view;
+      applyView();
+    };
+  });
+}
+function applyView() {
+  const p = $('#prod'), d = $('#deliv'), s = $('#side');
+  if (!p || !d || !s) return;
+  if (window.innerWidth > 992) {
+    p.style.display = ''; d.style.display = ''; s.style.display = '';
+    return;
+  }
+  if (curView === 'all') {
+    p.style.display = ''; d.style.display = ''; s.style.display = '';
+  } else if (curView === 'side') {
+    s.style.display = ''; p.style.display = 'none'; d.style.display = 'none';
+  } else if (curView === 'prod') {
+    p.style.display = ''; s.style.display = 'none'; d.style.display = 'none';
+  } else if (curView === 'deliv') {
+    d.style.display = ''; p.style.display = 'none'; s.style.display = 'none';
+  }
+}
+window.addEventListener('resize', applyView);
+
+(async function init() {
+  initViewSwitch();
+  try { PRODUCTS = await api('/api/products'); } catch (e) { setStatus('koneksi putus — ' + e.message, true); return; }
+  const want = location.hash.slice(1) || (() => { try { return localStorage.getItem('k3va_prod'); } catch (e) { return ''; } })();
+  prod = PRODUCTS.some(p => p.id === want) ? want : PRODUCTS[0].id;
+  renderTabs();
+  go(nowYm());
+})();
+setInterval(() => { if (!document.hidden) load(false); }, 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(false); });
+</script>
+</body>
+</html>
