@@ -13,8 +13,11 @@ const NUM_KEY = /^((inj|vac|ng|del)-(\d{1,2})-(rh|lh)|awal-(rh|lh)|rp-awal-(rh|l
 const TXT_KEY = /^(rem-\d{1,2}|sor-\d{1,3}-(tgl|rem))$/;
 
 function getSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_KEY ||
+              process.env.SUPABASE_ANON_KEY ||
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+              process.env.NEXT_PUBLIC_SUPABASE_KEY;
   if (!url || !key) {
     throw new Error('SUPABASE_URL dan SUPABASE_KEY belum diisi di Environment Variables!');
   }
